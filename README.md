@@ -56,8 +56,8 @@ Para habilitar a **Parte 2**, adicione colunas de datas ao arquivo com o formato
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/ipg-dashboard.git
-cd ipg-dashboard
+git clone https://github.com/Lipolys/Louvor-Metria.git
+cd Louvor-Metria
 
 # Instale as dependências
 npm install
@@ -118,14 +118,12 @@ Todos os dados são processados **inteiramente no seu navegador**. Nenhum dado �
 
 ## 📋 Roadmap (v2.0)
 
-- [ ] Exportação dos gráficos como imagem (PNG/SVG)
+- [ ] Exportação dos gráficos como imagem (PNG)
 - [ ] Sistema de snapshots para comparação histórica
-- [ ] Filtros avançados por período de tempo
-- [ ] Paginação virtualizada para repertórios muito grandes
-- [ ] Modo de exportação de relatório em PDF
+- [ ] Inserção de dados sem auxílio de CSV ou planilhas
 
 ---
 
 ## 📄 Licença
 
-MIT © IPG Dados
+MIT © Louvor Metria
