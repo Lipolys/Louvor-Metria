@@ -3,6 +3,8 @@ import { Upload, Link as LinkIcon, AlertCircle, CheckCircle2, Info, X, Download 
 import { createPortal } from 'react-dom';
 import { parseFile, fetchGoogleSheet } from '../utils/dataProcessor';
 
+const BASE_URL = import.meta.env.BASE_URL;
+
 export default function DataInput({ onDataLoaded }) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -149,7 +151,7 @@ export default function DataInput({ onDataLoaded }) {
 
             <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', textAlign: 'center' }}>
               <p className="mb-4" style={{ fontWeight: 600 }}>Quer facilitar? Baixe nosso modelo pronto:</p>
-              <a href="/modelo.csv" download className="btn btn-primary" style={{ textDecoration: 'none' }}>
+              <a href={`${BASE_URL}modelo.csv`} download className="btn btn-primary" style={{ textDecoration: 'none' }}>
                 <Download size={18} /> Baixar modelo.csv
               </a>
             </div>

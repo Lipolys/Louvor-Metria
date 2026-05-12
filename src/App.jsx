@@ -3,6 +3,8 @@ import DataInput from './components/DataInput';
 import Dashboard from './components/Dashboard';
 import { Music, LayoutDashboard, ChevronLeft } from 'lucide-react';
 
+const BASE_URL = import.meta.env.BASE_URL;
+
 function App() {
   const [data, setData] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -17,7 +19,7 @@ function App() {
       <aside className={`sidebar ${!isSidebarOpen ? 'collapsed' : ''}`}>
         <div>
           <div className="flex-center gap-2 mb-8" style={{ color: 'var(--accent-1)', position: 'relative' }}>
-            <img src="/logo.png" alt="Louvor Metria Logo" style={{ width: '64px', height: '64px', flexShrink: 0, objectFit: 'contain' }} />
+            <img src={`${BASE_URL}logo.png`} alt="Louvor Metria Logo" style={{ width: '64px', height: '64px', flexShrink: 0, objectFit: 'contain' }} />
             <h1 style={{ fontSize: '1.5rem', margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>Louvor Metria</h1>
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
