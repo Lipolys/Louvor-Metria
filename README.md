@@ -1,4 +1,4 @@
-# 🎵 IPG Repertório Dashboard
+# 🎵 Louvor Metria
 
 > **v1.0.0** — Dashboard analítico de repertório musical para igrejas. Local-first, sem servidor, sem coleta de dados.
 
