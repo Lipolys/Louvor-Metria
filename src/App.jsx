@@ -31,7 +31,14 @@ function App() {
               className="btn btn-secondary" 
               style={{ justifyContent: isSidebarOpen ? 'flex-start' : 'center', border: 'none', background: 'rgba(255,255,255,0.05)' }} 
               title="Dashboard"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => {
+                // If already on dashboard, just scroll to top of page; otherwise navigate to dashboard
+                if (currentPage === 'dashboard') {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                  navigateTo('dashboard');
+                }
+              }}
             >
               <LayoutDashboard size={18} style={{ flexShrink: 0 }} />
               <span className="sidebar-text">Dashboard</span>
