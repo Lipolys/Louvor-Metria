@@ -799,3 +799,359 @@ html { scroll-behavior: smooth; }
 .p-8 { padding: 2rem; }
 .capitalize { text-transform: capitalize; }
 .last\:border-0:last-child { border: 0; }
+
+/* ══════════════════════════════════════════════════ */
+/* MOBILE RESPONSIVENESS (v2.1.0)                     */
+/* ══════════════════════════════════════════════════ */
+
+/* ── Mobile Hamburger Button ────────────────────── */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-md);
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--accent-1);
+}
+
+/* ── Mobile Overlay Backdrop ───────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 899;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+}
+
+/* ── Hide section nav links on mobile ──────────── */
+.desktop-section-nav {
+  display: flex;
+}
+
+/* ══════════════════════════════════════════════════ */
+/* Breakpoint: Tablet / Mobile Landscape (≤ 768px)   */
+/* ══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Mobile Menu Button ───────────────────────── */
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  /* ── Layout ───────────────────────────────────── */
+  .app-container {
+    flex-direction: column;
+  }
+
+  #root {
+    flex-direction: column;
+  }
+
+  /* ── Sidebar → Drawer ─────────────────────────── */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 900;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-right: 1px solid var(--glass-border);
+    background: var(--bg-secondary);
+    overflow-y: auto;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: 280px;
+    padding: 2rem;
+  }
+
+  .sidebar.collapsed.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar.collapsed h1,
+  .sidebar.collapsed .sidebar-text,
+  .sidebar.collapsed p {
+    display: block;
+  }
+
+  /* Hide the desktop toggle in mobile */
+  .sidebar-toggle {
+    display: none;
+  }
+
+  /* Overlay */
+  .sidebar-overlay {
+    display: block;
+  }
+
+  /* ── Main Content ─────────────────────────────── */
+  .main-content {
+    padding: 4.5rem 1rem 2rem 1rem;
+    width: 100%;
+  }
+
+  /* ── Header ───────────────────────────────────── */
+  .main-content > header.flex-between,
+  header.flex-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  header.flex-between h2 {
+    font-size: 1.5rem;
+  }
+
+  /* Hide desktop section navigation buttons */
+  .desktop-section-nav {
+    display: none !important;
+  }
+
+  /* ── Dashboard Grid ───────────────────────────── */
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+
+  /* ── Summary Cards ────────────────────────────── */
+  .summary-value {
+    font-size: 1.8rem;
+  }
+
+  .summary-label {
+    font-size: 0.8rem;
+  }
+
+  /* ── Section & Chart Titles ───────────────────── */
+  .section-title {
+    font-size: 1.2rem;
+  }
+
+  .chart-title {
+    font-size: 1rem;
+  }
+
+  .section-subtitle {
+    font-size: 0.82rem;
+  }
+
+  /* ── Glass Panel ──────────────────────────────── */
+  .glass-panel {
+    padding: 1rem;
+  }
+
+  .glass-panel:hover {
+    transform: none;
+  }
+
+  /* ── Typography ───────────────────────────────── */
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.1rem; }
+
+  /* ── Charts ───────────────────────────────────── */
+  .recharts-wrapper {
+    font-size: 0.75rem;
+  }
+
+  /* ── Data Tables ──────────────────────────────── */
+  .data-table th, .data-table td {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  /* ── Cadastro Page ────────────────────────────── */
+  .cadastro-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.25rem;
+  }
+
+  .cadastro-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cadastro-tab {
+    flex-shrink: 0;
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+  }
+
+  .cadastro-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .cadastro-search-wrapper {
+    max-width: 100%;
+  }
+
+  .cadastro-table th,
+  .cadastro-table td {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.82rem;
+  }
+
+  .cadastro-table th {
+    font-size: 0.7rem;
+  }
+
+  /* ── CRUD Modal ───────────────────────────────── */
+  .crud-overlay {
+    padding: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .crud-modal {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  /* ── Toast ────────────────────────────────────── */
+  .cadastro-toast {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    justify-content: center;
+  }
+
+  /* ── DataInput ────────────────────────────────── */
+  .data-input-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  /* ── Equilibrio / Pareto / Flex-between contexts ─ */
+  .dashboard-flex-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .dashboard-flex-header > span {
+    align-self: flex-start;
+  }
+
+  /* ── Help Modal ───────────────────────────────── */
+  .help-format-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Chart Help Popup ─────────────────────────── */
+  .chart-help-popup {
+    min-width: 250px;
+    max-width: calc(100vw - 3rem);
+    left: auto;
+    right: 0;
+  }
+
+  /* ── Individual profile cards ─────────────────── */
+  .profile-cards-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* ── Gender profile cards ─────────────────────── */
+  .gender-profile-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .gender-profile-inner {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════ */
+/* Breakpoint: Small Mobile (≤ 480px)                 */
+/* ══════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  .main-content {
+    padding: 4rem 0.75rem 1.5rem 0.75rem;
+  }
+
+  .summary-value {
+    font-size: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+  }
+
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.25rem; }
+
+  .glass-panel {
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+  }
+
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .cadastro-tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.78rem;
+  }
+
+  .profile-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .crud-overlay {
+    padding: 0;
+  }
+
+  .crud-modal {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 90vh;
+  }
+
+  /* Sidebar drawer slightly narrower */
+  .sidebar {
+    width: 260px;
+  }
+
+  .sidebar.collapsed {
+    width: 260px;
+  }
+}
