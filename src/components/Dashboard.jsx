@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LabelList,
-  PieChart, Pie, Cell, Legend, LineChart, Line
+  PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart, Area, ReferenceLine
 } from 'recharts';
-import { AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, TrendingUp } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#84cc16'];
 const GENDER_COLORS = { 'Masculino': '#3b82f6', 'Feminino': '#ec4899', 'Não informado': '#94a3b8' };
@@ -464,6 +464,74 @@ export default function Dashboard({ data }) {
       return { genero: g, cancoes, cantoresCount, topTom: `${topTom} (${maxTom}x)`, topTipo: `${topTipo} (${maxTipo}x)`, mediaPorCantor, execs: generoExecsMap[g] || 0 };
     });
 
+    // ============================
+    // NOVOS: 6 Análises Avançadas
+    // ============================
+
+    // A1 — Status das Canções (donut)
+    const statusCountMap = {};
+    todasMestres.forEach(m => { statusCountMap[m.status] = (statusCountMap[m.status] || 0) + 1; });
+    const STATUS_ORDER = ['Ativa', 'Estreante', 'Esquecida', 'Nunca Cantada', 'Sem Dados'];
+    const statusChartData = STATUS_ORDER
+      .filter(s => statusCountMap[s] > 0)
+      .map(s => ({ name: s, valor: statusCountMap[s], porcentagem: ((statusCountMap[s] / total) * 100).toFixed(1) + '%' }));
+    const STATUS_COLORS = { 'Ativa': '#3b82f6', 'Estreante': '#10b981', 'Esquecida': '#f59e0b', 'Nunca Cantada': '#ef4444', 'Sem Dados': '#64748b' };
+
+    // A2 — Pareto / Concentração
+    let paretoAccum = 0;
+    const allExecsSorted = todasMestres.filter(m => m.execs > 0).sort((a, b) => b.execs - a.execs);
+    const paretoData = allExecsSorted.map((m, i) => {
+      paretoAccum += m.execs;
+      return { name: m.titulo.length > 20 ? m.titulo.substring(0, 18) + '…' : m.titulo, execs: m.execs, pctAcumulado: totalExecucoes > 0 ? parseFloat(((paretoAccum / totalExecucoes) * 100).toFixed(1)) : 0 };
+    });
+    const pareto80Index = paretoData.findIndex(d => d.pctAcumulado >= 80);
+    const pareto80Count = pareto80Index >= 0 ? pareto80Index + 1 : paretoData.length;
+    const paretoTotalSongs = paretoData.length;
+
+    // A3 — Versatilidade dos Cantores
+    const versatilityData = resumoCantor.map(c => ({
+      name: c.cantor,
+      'Tons Distintos': c.tonsDistintos,
+      'Tipos Distintos': c.tiposDistintos,
+      total: c.tonsDistintos + c.tiposDistintos
+    })).sort((a, b) => b.total - a.total);
+
+    // B2 — Canções Esquecidas (com dias sem tocar)
+    const lastDateParsed = lastDate ? parseDateStr(lastDate) : new Date();
+    const esquecidasData = todasMestres.filter(m => m.status === 'Esquecida').map(m => {
+      const ultimaStr = ultimaExecucao[m.titulo];
+      const ultimaParsed = ultimaStr ? parseDateStr(ultimaStr) : null;
+      const diasSemTocar = ultimaParsed ? Math.floor((lastDateParsed - ultimaParsed) / (1000 * 60 * 60 * 24)) : 999;
+      const semanasSemTocar = Math.max(1, Math.floor(diasSemTocar / 7));
+      return { ...m, diasSemTocar, semanasSemTocar: semanasSemTocar + ' sem.' };
+    }).sort((a, b) => b.diasSemTocar - a.diasSemTocar);
+
+    // C1 — Tons Maiores vs Menores
+    let tonsMaiores = 0, tonsMenores = 0;
+    Object.entries(tomCountMap).forEach(([tom, count]) => {
+      if (tom === 'N/A') return;
+      if (tom.length > 1 && tom.endsWith('m')) tonsMenores += count;
+      else tonsMaiores += count;
+    });
+    const tonsMaioresMenoresData = [
+      { name: 'Maiores (alegres)', valor: tonsMaiores },
+      { name: 'Menores (reflexivas)', valor: tonsMenores }
+    ].filter(d => d.valor > 0);
+
+    // D3 — Ranking de Eficiência
+    const eficienciaData = Object.keys(cantorCountMap).map(c => {
+      const cancoes = cantorCountMap[c];
+      const execs = cantorExecsMap[c] || 0;
+      const eficiencia = cancoes > 0 ? parseFloat((execs / cancoes).toFixed(2)) : 0;
+      const nuncaCantadas = todasMestres.filter(m => (m.cantor?.trim() || '-') === c && m.status === 'Nunca Cantada').length;
+      return {
+        cantor: c, cancoes, execs, eficiencia,
+        eficienciaStr: eficiencia.toFixed(1) + 'x',
+        nuncaCantadas,
+        pctNunca: cancoes > 0 ? ((nuncaCantadas / cancoes) * 100).toFixed(0) + '%' : '0%'
+      };
+    }).sort((a, b) => b.eficiencia - a.eficiencia);
+
     return {
       total, cantoresTotais: cantores.size, tonsTotais: tons.size, tiposTotais: tiposSet.size, totalExecucoes,
       antigas, recentes, dateColumns: sortedDates, dateCount,
@@ -477,7 +545,14 @@ export default function Dashboard({ data }) {
       cantorUsoData, tomUsoData, tipoUsoData, epocaUsoData, evolucaoTemporal,
       // Gênero
       generoCantorCountData, generoCancoesData, generoTomChartData, generoTipoChartData,
-      generoExecsData, heatmapGeneroTom, heatmapGeneroTipo, heatmapGeneroEpoca, generoProfiles
+      generoExecsData, heatmapGeneroTom, heatmapGeneroTipo, heatmapGeneroEpoca, generoProfiles,
+      // Novos (6 análises)
+      statusChartData, STATUS_COLORS,
+      paretoData, pareto80Count, paretoTotalSongs,
+      versatilityData,
+      esquecidasData,
+      tonsMaioresMenoresData,
+      eficienciaData
     };
 
   }, [data]);
@@ -636,6 +711,48 @@ export default function Dashboard({ data }) {
         </div>
       </div>
 
+      {/* C1 — Tons Maiores vs Menores + A3 — Versatilidade */}
+      {stats.tonsMaioresMenoresData.length > 0 && (
+        <div className="dashboard-grid">
+          <div className="glass-panel h-full">
+            <h3 className="chart-title">Tonalidades: Maiores vs Menores</h3>
+            <div style={{ height: '280px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={stats.tonsMaioresMenoresData} cx="50%" cy="50%" innerRadius={55} outerRadius={95} dataKey="valor" paddingAngle={5} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                    <Cell fill="#f59e0b" />
+                    <Cell fill="#8b5cf6" />
+                  </Pie>
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} itemStyle={{ color: '#f8fafc' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', marginBottom: 0 }}>
+              Tons maiores (C, D, G…) tendem a ser mais alegres. Menores (Am, Em…) mais reflexivos.
+            </p>
+          </div>
+          <div className="glass-panel h-full">
+            <h3 className="chart-title">Índice de Versatilidade dos Cantores</h3>
+            <div style={{ height: '280px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.versatilityData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={false} />
+                  <XAxis type="number" stroke="#94a3b8" />
+                  <YAxis dataKey="name" type="category" stroke="#94a3b8" width={80} tick={{ fontSize: 11 }} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#f8fafc' }} />
+                  <Legend />
+                  <Bar dataKey="Tons Distintos" stackId="v" fill={COLORS[1]} />
+                  <Bar dataKey="Tipos Distintos" stackId="v" fill={COLORS[2]} radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', marginBottom: 0 }}>
+              Quanto mais tons e tipos distintos, mais versátil o cantor.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ---------------------------------------------------- */}
       {/* PARTE 2: USO REAL E TEMPORAL (BLOCOS 18 A 28) */}
       {/* ---------------------------------------------------- */}
@@ -717,6 +834,94 @@ export default function Dashboard({ data }) {
 
               {/* Bloco 27: Heatmap Cantor x Domingo */}
               <HeatmapTable title="Participação: Cantor × Domingo" data={stats.heatmapCantorDomingo.data} columns={stats.heatmapCantorDomingo.columns} rowKey="cantor" maxValue={stats.heatmapCantorDomingo.max} />
+
+              {/* A1 — Status das Canções + A2 — Pareto */}
+              <div className="dashboard-grid">
+                <div className="glass-panel h-full">
+                  <h3 className="chart-title">Saúde do Repertório (Status)</h3>
+                  <div style={{ height: '300px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={stats.statusChartData} cx="50%" cy="50%" innerRadius={55} outerRadius={95} dataKey="valor" paddingAngle={3} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                          {stats.statusChartData.map((entry) => <Cell key={entry.name} fill={stats.STATUS_COLORS[entry.name] || '#64748b'} />)}
+                        </Pie>
+                        <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} itemStyle={{ color: '#f8fafc' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <DataTable title="Status do Repertório" columns={[{ header: 'Status', accessor: 'name' }, { header: 'Canções', accessor: 'valor' }, { header: '%', accessor: 'porcentagem' }]} data={stats.statusChartData} />
+              </div>
+
+              {/* A2 — Pareto / Concentração */}
+              {stats.paretoData.length > 0 && (
+                <div>
+                  <div className="flex-between mb-4">
+                    <h3 className="chart-title" style={{ margin: 0 }}>Concentração do Repertório (Pareto)</h3>
+                    <span style={{ background: stats.pareto80Count <= Math.ceil(stats.paretoTotalSongs * 0.3) ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)', padding: '0.3rem 0.8rem', borderRadius: '1rem', fontSize: '0.85rem', fontWeight: 600 }}>
+                      {stats.pareto80Count} de {stats.paretoTotalSongs} canções = 80% das execuções
+                    </span>
+                  </div>
+                  <div className="glass-panel" style={{ height: '350px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={stats.paretoData.slice(0, 20)} margin={{ top: 20, right: 40, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                        <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 10, fill: '#94a3b8' }} angle={-25} textAnchor="end" height={60} />
+                        <YAxis yAxisId="left" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                        <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[0, 100]} unit="%" />
+                        <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#f8fafc' }} />
+                        <Legend />
+                        <ReferenceLine yAxisId="right" y={80} stroke="#ef4444" strokeDasharray="5 5" label={{ value: '80%', fill: '#ef4444', fontSize: 12, position: 'right' }} />
+                        <Bar yAxisId="left" dataKey="execs" name="Execuções" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
+                        <Area yAxisId="right" dataKey="pctAcumulado" name="% Acumulado" stroke={COLORS[3]} fill="rgba(245,158,11,0.15)" strokeWidth={2} dot={{ r: 3 }} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {stats.pareto80Count <= Math.ceil(stats.paretoTotalSongs * 0.3) && (
+                    <div className="flex-center gap-2" style={{ color: '#f59e0b', marginTop: '1rem', padding: '0.75rem 1rem', background: 'rgba(245,158,11,0.1)', borderRadius: '0.5rem', fontSize: '0.9rem' }}>
+                      <AlertCircle size={18} />
+                      <span>Alta concentração: apenas <strong>{stats.pareto80Count}</strong> canções dominam 80% das execuções. Considere diversificar.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* D3 — Ranking de Eficiência */}
+              <DataTable 
+                title="Ranking de Eficiência dos Cantores"
+                columns={[
+                  { header: 'Cantor', accessor: 'cantor' },
+                  { header: 'Canções', accessor: 'cancoes' },
+                  { header: 'Execuções', accessor: 'execs' },
+                  { header: 'Eficiência', accessor: 'eficienciaStr' },
+                  { header: 'Nunca Cantadas', accessor: 'nuncaCantadas' },
+                  { header: '% Ociosa', accessor: 'pctNunca' }
+                ]}
+                data={stats.eficienciaData}
+              />
+
+              {/* B2 — Canções Esquecidas */}
+              {stats.esquecidasData.length > 0 && (
+                <div>
+                  <div className="flex-between mb-4">
+                    <h3 className="chart-title" style={{ margin: 0 }}>⚠️ Canções Esquecidas</h3>
+                    <span style={{ background: 'rgba(245,158,11,0.2)', padding: '0.3rem 0.8rem', borderRadius: '1rem', fontSize: '0.85rem' }}>
+                      {stats.esquecidasData.length} canções sem tocar recentemente
+                    </span>
+                  </div>
+                  <DataTable
+                    defaultLimit={10}
+                    columns={[
+                      { header: 'Canção', accessor: 'titulo' },
+                      { header: 'Cantor', accessor: 'cantor' },
+                      { header: 'Última Vez', accessor: 'ultima' },
+                      { header: 'Tempo Parada', accessor: 'semanasSemTocar' },
+                      { header: 'Total Exec.', accessor: 'execs' }
+                    ]}
+                    data={stats.esquecidasData}
+                  />
+                </div>
+              )}
 
               {/* Bloco 28: Tabela Mestre Resumo Executivo */}
               <DataTable 
