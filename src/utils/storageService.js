@@ -93,13 +93,27 @@ const toDashboardFormat = () => {
   const epocaMap = Object.fromEntries(epocas.map((e) => [e.id, e]));
   const tipoMap = Object.fromEntries(tipos.map((t) => [t.id, t]));
 
-  return musicas.map((m) => ({
-    titulo: m.titulo || '',
-    cantor: cantorMap[m.cantorId]?.nome || 'Desconhecido',
-    tom: m.tom || '',
-    tipo: tipoMap[m.tipoId]?.nome || 'Desconhecido',
-    epoca: epocaMap[m.epocaId]?.nome || 'Desconhecida',
-  }));
+  const normalizeGenero = (genero) => {
+    const value = (genero || '').toString().trim().toLowerCase();
+    if (value === 'm' || value === 'masculino' || value === 'homem' || value === 'male') return 'Masculino';
+    if (value === 'f' || value === 'feminino' || value === 'mulher' || value === 'female') return 'Feminino';
+    if (value === 'masculino' || value === 'feminino') return genero;
+    return 'Não informado';
+  };
+
+  return musicas.map((m) => {
+    const cantor = cantorMap[m.cantorId];
+    const generoDashboard = normalizeGenero(m.genero || cantor?.genero);
+
+    return {
+      titulo: m.titulo || '',
+      cantor: cantor?.nome || 'Desconhecido',
+      tom: m.tom || '',
+      tipo: tipoMap[m.tipoId]?.nome || 'Desconhecido',
+      epoca: epocaMap[m.epocaId]?.nome || 'Desconhecida',
+      genero: generoDashboard,
+    };
+  });
 };
 
 /**

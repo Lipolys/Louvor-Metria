@@ -15,7 +15,7 @@ const TABS = [
 const COLUMN_DEFS = {
   cantores: [
     { header: 'Nome', accessor: 'nome' },
-    { header: 'Sexo', accessor: 'sexo', render: (v) => v === 'M' ? 'Masculino' : 'Feminino' },
+    { header: 'Genero', accessor: 'genero', render: (v) => v === 'M' ? 'Masculino' : 'Feminino' },
   ],
   epocas: [
     { header: 'Nome', accessor: 'nome' },

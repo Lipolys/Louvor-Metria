@@ -1,9 +1,9 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LabelList,
   PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart, Area, ReferenceLine
 } from 'recharts';
-import { AlertCircle, CheckCircle2, Eye, EyeOff, TrendingUp, Users, Music, Calendar, BarChart3 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, TrendingUp, Users, Music, BarChart3 } from 'lucide-react';
 import ChartHelp from './ChartHelp';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#84cc16'];
@@ -168,7 +168,7 @@ export default function Dashboard({ data }) {
     const generoTipoMap = {};        // gênero -> { tipo: count }
     const generoEpocaMap = {};       // gênero -> { epoca: count }
     const generoExecsMap = {};       // gênero -> nº de execuções (uso real)
-    const cantorGeneroMap = {};      // cantor -> gênero
+    const generoPorCantorMap = {};   // cantor -> gênero inferido
 
     // Novas Variáveis para Análise de Execução Temporal (Blocos 20 a 28)
     const cantorExecsMap = {};
@@ -185,7 +185,7 @@ export default function Dashboard({ data }) {
     const dateColumns = data.length > 0 ? Object.keys(data[0]).filter(k => !standardCols.includes(k.toLowerCase())) : [];
 
     const parseDateStr = (str) => {
-        const parts = str.split(/[\/\-]/);
+        const parts = str.split(/[/-]/);
         if (parts.length >= 2) {
             let d = parts[0], m = parts[1], y = parts.length > 2 ? parts[2] : new Date().getFullYear().toString();
             if (y.length === 2) y = "20" + y;
@@ -201,6 +201,24 @@ export default function Dashboard({ data }) {
         estreiasPorDataMap[d] = 0;
     });
 
+    const normalizeGenero = (value) => {
+        const raw = (value || '').toString().trim().toLowerCase();
+        if (!raw) return 'Não informado';
+        if (raw === 'm' || raw === 'masculino' || raw === 'homem' || raw === 'male') return 'Masculino';
+        if (raw === 'f' || raw === 'feminino' || raw === 'mulher' || raw === 'female') return 'Feminino';
+        if (raw === 'não informado' || raw === 'nao informado' || raw === 'desconhecido') return 'Não informado';
+        return value;
+    };
+
+    data.forEach(d => {
+      const c = d.cantor?.trim() || 'Desconhecido';
+      const gen = normalizeGenero(d.genero);
+      if (gen !== 'Não informado') {
+        generoPorCantorMap[c] = gen;
+      }
+    });
+
+
     data.forEach(d => {
       const ep = d.epoca?.toString().toLowerCase().trim() || 'desconhecido';
       const epocaFormatted = ep.includes('antiga') ? 'Antiga' : (ep.includes('recente') ? 'Recente' : 'Desconhecida');
@@ -211,7 +229,7 @@ export default function Dashboard({ data }) {
       cantores.add(c);
       cantorCountMap[c] = (cantorCountMap[c] || 0) + 1;
       
-      const gen = d.genero || 'Não informado';
+      const gen = normalizeGenero(d.genero || generoPorCantorMap[c]);
       
       let t = d.tom?.trim() || 'N/A';
       if(t && t !== 'N/A') t = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
@@ -227,7 +245,7 @@ export default function Dashboard({ data }) {
       generoCountMap[gen] = (generoCountMap[gen] || 0) + 1;
       if (!generoCantorSet[gen]) generoCantorSet[gen] = new Set();
       generoCantorSet[gen].add(c);
-      cantorGeneroMap[c] = gen;
+      if (gen !== 'Não informado') generoPorCantorMap[c] = gen;
       
       if (!generoTomMap[gen]) generoTomMap[gen] = {};
       generoTomMap[gen][t] = (generoTomMap[gen][t] || 0) + 1;
@@ -490,8 +508,10 @@ export default function Dashboard({ data }) {
     // ============================
 
     // A1 — Status das Canções (donut)
-    const statusCountMap = {};
-    todasMestres.forEach(m => { statusCountMap[m.status] = (statusCountMap[m.status] || 0) + 1; });
+    const statusCountMap = todasMestres.reduce((acc, m) => {
+      acc[m.status] = (acc[m.status] || 0) + 1;
+      return acc;
+    }, {});
     const STATUS_ORDER = ['Ativa', 'Estreante', 'Esquecida', 'Nunca Cantada', 'Sem Dados'];
     const statusChartData = STATUS_ORDER
       .filter(s => statusCountMap[s] > 0)
@@ -499,12 +519,17 @@ export default function Dashboard({ data }) {
     const STATUS_COLORS = { 'Ativa': '#3b82f6', 'Estreante': '#10b981', 'Esquecida': '#f59e0b', 'Nunca Cantada': '#ef4444', 'Sem Dados': '#64748b' };
 
     // A2 — Pareto / Concentração
-    let paretoAccum = 0;
     const allExecsSorted = todasMestres.filter(m => m.execs > 0).sort((a, b) => b.execs - a.execs);
-    const paretoData = allExecsSorted.map((m, i) => {
-      paretoAccum += m.execs;
-      return { name: m.titulo.length > 20 ? m.titulo.substring(0, 18) + '…' : m.titulo, execs: m.execs, pctAcumulado: totalExecucoes > 0 ? parseFloat(((paretoAccum / totalExecucoes) * 100).toFixed(1)) : 0 };
-    });
+    const paretoData = allExecsSorted.reduce((acc, m) => {
+      const running = (acc.running || 0) + m.execs;
+      acc.running = running;
+      acc.data.push({
+        name: m.titulo.length > 20 ? m.titulo.substring(0, 18) + '…' : m.titulo,
+        execs: m.execs,
+        pctAcumulado: totalExecucoes > 0 ? parseFloat(((running / totalExecucoes) * 100).toFixed(1)) : 0
+      });
+      return acc;
+    }, { running: 0, data: [] }).data;
     const pareto80Index = paretoData.findIndex(d => d.pctAcumulado >= 80);
     const pareto80Count = pareto80Index >= 0 ? pareto80Index + 1 : paretoData.length;
     const paretoTotalSongs = paretoData.length;
@@ -578,11 +603,7 @@ export default function Dashboard({ data }) {
 
   }, [data]);
 
-  useEffect(() => {
-    if (stats && stats.cantoresArr.length > 0) {
-      setSelectedCantor(prev => prev || stats.cantoresArr[0]);
-    }
-  }, [stats]);
+  const selectedCantorResolved = selectedCantor || stats?.cantoresArr[0] || '';
 
   if (!stats) return null;
 
@@ -705,29 +726,29 @@ export default function Dashboard({ data }) {
       <div className="glass-panel">
         <div className="flex-between mb-6">
             <h3 className="chart-title" style={{ margin: 0 }}>Perfil Individual</h3>
-            <select value={selectedCantor} onChange={e => setSelectedCantor(e.target.value)} className="input-field" style={{ width: 'auto', minWidth: '200px' }}>
+            <select value={selectedCantorResolved} onChange={e => setSelectedCantor(e.target.value)} className="input-field" style={{ width: 'auto', minWidth: '200px' }}>
                 {stats.cantoresArr.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
         </div>
-        {stats.cantorProfiles[selectedCantor] && (
-            <div className="dashboard-grid mb-0">
+        {stats.cantorProfiles[selectedCantorResolved] && (
+            <div className="dashboard-grid profile-cards-grid mb-0">
                 <div className="summary-card" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '1.5rem' }}>
-                    <span className="summary-label">Total de Canções</span><span className="summary-value" style={{ color: 'var(--accent-1)' }}>{stats.cantorProfiles[selectedCantor].cancoes}</span>
+                    <span className="summary-label">Total de Canções</span><span className="summary-value" style={{ color: 'var(--accent-1)' }}>{stats.cantorProfiles[selectedCantorResolved].cancoes}</span>
                 </div>
                 <div className="summary-card" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '1.5rem' }}>
-                    <span className="summary-label">Tom mais cantado</span><span className="summary-value" style={{ color: 'var(--accent-2)' }}>{stats.cantorProfiles[selectedCantor].tomMaisCantado}</span>
+                    <span className="summary-label">Tom mais cantado</span><span className="summary-value" style={{ color: 'var(--accent-2)' }}>{stats.cantorProfiles[selectedCantorResolved].tomMaisCantado}</span>
                 </div>
                 <div className="summary-card" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '1.5rem' }}>
-                    <span className="summary-label">Tipo mais cantado</span><span className="summary-value" style={{ color: 'var(--accent-3)' }}>{stats.cantorProfiles[selectedCantor].tipoMaisCantado}</span>
+                    <span className="summary-label">Tipo mais cantado</span><span className="summary-value" style={{ color: 'var(--accent-3)' }}>{stats.cantorProfiles[selectedCantorResolved].tipoMaisCantado}</span>
                 </div>
                 <div className="summary-card" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '1.5rem' }}>
-                    <span className="summary-label">Tons / Tipos distintos</span><span className="summary-value" style={{ color: 'var(--accent-4)' }}>{stats.cantorProfiles[selectedCantor].tonsDistintos} / {stats.cantorProfiles[selectedCantor].tiposDistintos}</span>
+                    <span className="summary-label">Tons / Tipos distintos</span><span className="summary-value" style={{ color: 'var(--accent-4)' }}>{stats.cantorProfiles[selectedCantorResolved].tonsDistintos} / {stats.cantorProfiles[selectedCantorResolved].tiposDistintos}</span>
                 </div>
                 <div className="summary-card" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '1.5rem' }}>
-                    <span className="summary-label">Canções Antigas</span><span className="summary-value" style={{ color: 'var(--accent-5)' }}>{stats.cantorProfiles[selectedCantor].antigas}</span>
+                    <span className="summary-label">Canções Antigas</span><span className="summary-value" style={{ color: 'var(--accent-5)' }}>{stats.cantorProfiles[selectedCantorResolved].antigas}</span>
                 </div>
                 <div className="summary-card" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '1.5rem' }}>
-                    <span className="summary-label">Canções Recentes</span><span className="summary-value" style={{ color: 'var(--accent-1)' }}>{stats.cantorProfiles[selectedCantor].recentes}</span>
+                    <span className="summary-label">Canções Recentes</span><span className="summary-value" style={{ color: 'var(--accent-1)' }}>{stats.cantorProfiles[selectedCantorResolved].recentes}</span>
                 </div>
             </div>
         )}
@@ -1007,11 +1028,11 @@ export default function Dashboard({ data }) {
           <p className="section-subtitle">Comparação de repertório e desempenho entre gêneros.</p>
 
           {/* Cards comparativos por gênero */}
-          <div className="dashboard-grid" style={{ gridTemplateColumns: `repeat(${Math.min(stats.generoProfiles.length, 3)}, 1fr)` }}>
+          <div className="dashboard-grid gender-profile-grid">
             {stats.generoProfiles.map(prof => (
               <div key={prof.genero} className="glass-panel" style={{ borderLeft: `4px solid ${GENDER_COLORS[prof.genero] || '#94a3b8'}` }}>
                 <h3 className="chart-title" style={{ color: GENDER_COLORS[prof.genero] || '#94a3b8' }}>{prof.genero}</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="gender-profile-inner">
                   <div className="summary-card">
                     <span className="summary-label">Cantores</span>
                     <span className="summary-value" style={{ fontSize: '1.8rem', color: GENDER_COLORS[prof.genero] || '#94a3b8' }}>{prof.cantoresCount}</span>
