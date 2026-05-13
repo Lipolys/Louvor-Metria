@@ -24,7 +24,7 @@ export default function CrudModal({ entity, item, onClose, onSaved }) {
   const fieldDefs = {
     cantores: [
       { key: 'nome', label: 'Nome', type: 'text', required: true },
-      { key: 'sexo', label: 'Sexo', type: 'select', options: [{ value: 'M', label: 'Masculino' }, { value: 'F', label: 'Feminino' }], required: true },
+      { key: 'genero', label: 'Genero', type: 'select', options: [{ value: 'M', label: 'Masculino' }, { value: 'F', label: 'Feminino' }], required: true },
     ],
     epocas: [
       { key: 'nome', label: 'Nome da Época', type: 'text', required: true, placeholder: 'Ex: Antiga, Recente' },
@@ -34,7 +34,7 @@ export default function CrudModal({ entity, item, onClose, onSaved }) {
     ],
     musicas: [
       { key: 'titulo', label: 'Título da Música', type: 'text', required: true },
-      { key: 'cantorId', label: 'Cantor', type: 'select', options: cantores.map(c => ({ value: c.id, label: `${c.nome} (${c.sexo === 'M' ? 'Masc.' : 'Fem.'})` })), required: true, emptyLabel: 'Selecione um cantor…' },
+      { key: 'cantorId', label: 'Cantor', type: 'select', options: cantores.map(c => ({ value: c.id, label: `${c.nome} (${c.genero === 'M' ? 'Masc.' : 'Fem.'})` })), required: true, emptyLabel: 'Selecione um cantor…' },
       { key: 'epocaId', label: 'Época', type: 'select', options: epocas.map(e => ({ value: e.id, label: e.nome })), required: true, emptyLabel: 'Selecione uma época…' },
       { key: 'tipoId', label: 'Tipo', type: 'select', options: tipos.map(t => ({ value: t.id, label: t.nome })), required: true, emptyLabel: 'Selecione um tipo…' },
       { key: 'tom', label: 'Tom', type: 'select', options: TONS_FUNDAMENTAIS.map(t => ({ value: t, label: t })), required: true, emptyLabel: 'Selecione um tom…' },

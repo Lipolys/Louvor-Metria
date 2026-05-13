@@ -62,7 +62,7 @@ export default function DataInput({ onDataLoaded }) {
         </button>
       </h3>
       
-      <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: 0 }}>
+      <div className="data-input-grid">
         
         {/* URL Input */}
         <div>

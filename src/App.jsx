@@ -3,13 +3,15 @@ import DataInput from './components/DataInput';
 import Dashboard from './components/Dashboard';
 import CadastroPage from './components/CadastroPage';
 import storageService from './utils/storageService';
-import { Music, LayoutDashboard, ChevronLeft, ClipboardList, Database, Trash2 } from 'lucide-react';
+import { Music, LayoutDashboard, ChevronLeft, ClipboardList, Database, Trash2, Menu, X } from 'lucide-react';
 
 const BASE_URL = import.meta.env.BASE_URL;
 
 function App() {
   const [data, setData] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showSectionNav, setShowSectionNav] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard'); // 'dashboard' | 'cadastro'
   const [dataSource, setDataSource] = useState(null); // 'import' | 'cadastro' | null
 
@@ -40,12 +42,27 @@ function App() {
 
   const navigateTo = (page) => {
     setCurrentPage(page);
+    setIsMobileMenuOpen(false);
+    setShowSectionNav(false);
   };
 
   return (
     <div className="app-container">
+      <button
+        className="mobile-menu-btn"
+        onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+        aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+        aria-expanded={isMobileMenuOpen}
+      >
+        {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+      <div
+        className={`sidebar-overlay ${isMobileMenuOpen ? 'visible' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+        aria-hidden={!isMobileMenuOpen}
+      />
       {/* Sidebar */}
-      <aside className={`sidebar ${!isSidebarOpen ? 'collapsed' : ''}`}>
+      <aside className={`sidebar ${!isSidebarOpen ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
         <div>
           <div className="flex-center gap-2 mb-8" style={{ color: 'var(--accent-1)', position: 'relative' }}>
             <img src={`${BASE_URL}logo.png`} alt="Louvor Metria Logo" style={{ width: '64px', height: '64px', flexShrink: 0, objectFit: 'contain' }} />
@@ -60,6 +77,8 @@ function App() {
                 // If already on dashboard, just scroll to top of page; otherwise navigate to dashboard
                 if (currentPage === 'dashboard') {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setIsMobileMenuOpen(false);
+                  setShowSectionNav(false);
                 } else {
                   navigateTo('dashboard');
                 }
@@ -70,10 +89,10 @@ function App() {
             </button>
             {data && currentPage === 'dashboard' && isSidebarOpen && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginLeft: '1.25rem', marginTop: '0', paddingLeft: '0.75rem', borderLeft: '1px solid var(--border-color)' }}>
-                <a href="#visao-geral" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>1. Composição</a>
-                <a href="#perfil-cantores" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>2. Perfis & Cruzamentos</a>
-                <a href="#uso-real" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>3. Desempenho & Histórico</a>
-                <a href="#analise-genero" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>4. Análise por Gênero</a>
+                <a href="#visao-geral" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }} onClick={() => setIsMobileMenuOpen(false)}>1. Composição</a>
+                <a href="#perfil-cantores" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }} onClick={() => setIsMobileMenuOpen(false)}>2. Perfis & Cruzamentos</a>
+                <a href="#uso-real" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }} onClick={() => setIsMobileMenuOpen(false)}>3. Desempenho & Histórico</a>
+                <a href="#analise-genero" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }} onClick={() => setIsMobileMenuOpen(false)}>4. Análise por Gênero</a>
               </div>
             )}
             <button
@@ -90,7 +109,7 @@ function App() {
 
         <div style={{ marginTop: 'auto', display: isSidebarOpen ? 'block' : 'none' }}>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            Louvor Metria <br /> versão 2.0.0
+            Louvor Metria <br /> versão 2.1.0
           </p>
         </div>
 
@@ -118,11 +137,21 @@ function App() {
                 <p>Gerencie as canções e visualize análises estatísticas profundas.</p>
               </div>
               {data && (
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  <a href="#visao-geral" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>1. Composição</a>
-                  <a href="#perfil-cantores" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>2. Perfis</a>
-                  <a href="#uso-real" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>3. Histórico</a>
-                  <a href="#analise-genero" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>4. Gênero</a>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div className="desktop-section-nav" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <a href="#visao-geral" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>1. Composição</a>
+                    <a href="#perfil-cantores" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>2. Perfis</a>
+                    <a href="#uso-real" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>3. Histórico</a>
+                    <a href="#analise-genero" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>4. Gênero</a>
+                  </div>
+                  <button
+                    className="btn btn-secondary mobile-section-nav-toggle"
+                    onClick={() => setShowSectionNav((prev) => !prev)}
+                    style={{ fontSize: '0.85rem' }}
+                    aria-expanded={showSectionNav}
+                  >
+                    Seções
+                  </button>
                   <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
                   <button
                     className="btn btn-secondary"
@@ -133,8 +162,17 @@ function App() {
                     <Trash2 size={16} /> Limpar
                   </button>
                 </div>
-          )}
-        </header>
+              )}
+            </header>
+
+            {data && (
+              <div className={`mobile-section-nav ${showSectionNav ? 'open' : ''}`}>
+                <a href="#visao-geral" className="btn btn-secondary" onClick={() => setShowSectionNav(false)}>1. Composição</a>
+                <a href="#perfil-cantores" className="btn btn-secondary" onClick={() => setShowSectionNav(false)}>2. Perfis</a>
+                <a href="#uso-real" className="btn btn-secondary" onClick={() => setShowSectionNav(false)}>3. Histórico</a>
+                <a href="#analise-genero" className="btn btn-secondary" onClick={() => setShowSectionNav(false)}>4. Gênero</a>
+              </div>
+            )}
 
             <DataInput onDataLoaded={handleDataLoaded} />
 
