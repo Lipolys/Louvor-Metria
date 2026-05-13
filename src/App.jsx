@@ -3,7 +3,7 @@ import DataInput from './components/DataInput';
 import Dashboard from './components/Dashboard';
 import CadastroPage from './components/CadastroPage';
 import storageService from './utils/storageService';
-import { Music, LayoutDashboard, ChevronLeft, ClipboardList, Database } from 'lucide-react';
+import { Music, LayoutDashboard, ChevronLeft, ClipboardList, Database, Trash2 } from 'lucide-react';
 
 const BASE_URL = import.meta.env.BASE_URL;
 
@@ -16,6 +16,10 @@ function App() {
   const handleDataLoaded = (parsedData) => {
     setData(parsedData);
     setDataSource('import');
+  };
+
+  const handleClearData = () => {
+      setData(null);
   };
 
   const handleUseCadastroData = useCallback(() => {
@@ -50,17 +54,19 @@ function App() {
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <button
               className={`btn btn-secondary sidebar-nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`}
-              style={{ justifyContent: isSidebarOpen ? 'flex-start' : 'center', border: '1px solid transparent' }}
+              style={{ justifyContent: isSidebarOpen ? 'flex-start' : 'center', border: 'none', background: 'rgba(255,255,255,0.05)' }}
               title="Dashboard"
-              onClick={() => navigateTo('dashboard')}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <LayoutDashboard size={18} style={{ flexShrink: 0 }} />
               <span className="sidebar-text">Dashboard</span>
             </button>
             {data && currentPage === 'dashboard' && isSidebarOpen && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginLeft: '1.25rem', marginTop: '0', paddingLeft: '0.75rem', borderLeft: '1px solid var(--border-color)' }}>
-                <a href="#visao-geral" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>1. Visão Geral</a>
-                <a href="#uso-real" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>2. Análise de Uso Real</a>
+                <a href="#visao-geral" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>1. Composição</a>
+                <a href="#perfil-cantores" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>2. Perfis & Cruzamentos</a>
+                <a href="#uso-real" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>3. Desempenho & Histórico</a>
+                <a href="#analise-genero" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>4. Análise por Gênero</a>
               </div>
             )}
             <button
@@ -94,23 +100,34 @@ function App() {
       {/* Main Content */}
       <main className="main-content">
 
-        {/* ══════════════════════════════════════════ */}
-        {/* DASHBOARD PAGE                            */}
-        {/* ══════════════════════════════════════════ */}
-        {currentPage === 'dashboard' && (
+      {/* ══════════════════════════════════════════ */}
+      {/* DASHBOARD PAGE                            */}
+      {/* ══════════════════════════════════════════ */}
+      {currentPage === 'dashboard' && (
           <>
-            <header className="flex-between mb-8">
+          <header className="flex-between mb-8">
               <div>
                 <h2 style={{ fontSize: '2rem' }}>Dashboard</h2>
                 <p>Gerencie as canções e visualize análises estatísticas profundas.</p>
               </div>
               {data && (
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <a href="#visao-geral" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>1. Visão Geral</a>
-                  <a href="#uso-real" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>2. Análise de Uso Real</a>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <a href="#visao-geral" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>1. Composição</a>
+                  <a href="#perfil-cantores" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>2. Perfis</a>
+                  <a href="#uso-real" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>3. Histórico</a>
+                  <a href="#analise-genero" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>4. Gênero</a>
+                  <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleClearData}
+                    style={{ fontSize: '0.85rem', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}
+                    title="Limpar dados do dashboard"
+                  >
+                    <Trash2 size={16} /> Limpar
+                  </button>
                 </div>
-              )}
-            </header>
+          )}
+        </header>
 
             <DataInput onDataLoaded={handleDataLoaded} />
 
@@ -175,6 +192,7 @@ function App() {
         )}
 
       </main>
+
     </div>
   );
 }

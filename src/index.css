@@ -683,3 +683,119 @@ input, select, button {
 }
 
 html { scroll-behavior: smooth; }
+
+/* Dashboard Section & Chart Titles */
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
+}
+
+.chart-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+/* Chart Help Button */
+.chart-help-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  z-index: 10;
+}
+
+.chart-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chart-help-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--accent-1);
+  color: var(--accent-1);
+  transform: scale(1.1);
+}
+
+.chart-help-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 300px;
+  max-width: 400px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.chart-help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent-1);
+}
+
+.chart-help-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.chart-help-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chart-help-popup p {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.section-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: -1rem;
+  margin-bottom: 1.5rem;
+}
+
+.mt-8 { margin-top: 2rem; }
+.pt-8 { padding-top: 2rem; }
+.mb-0 { margin-bottom: 0; }
+.mb-6 { margin-bottom: 1.5rem; }
+.h-full { height: 100%; }
+.mt-4 { margin-top: 1rem; }
+.p-8 { padding: 2rem; }
+.capitalize { text-transform: capitalize; }
+.last\:border-0:last-child { border: 0; }
