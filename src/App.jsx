@@ -27,15 +27,21 @@ function App() {
             <h1 style={{ fontSize: '1.5rem', margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>Louvor Metria</h1>
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <button className="btn btn-secondary" style={{ justifyContent: isSidebarOpen ? 'flex-start' : 'center', border: 'none', background: 'rgba(255,255,255,0.05)' }} title="Dashboard">
+            <button 
+              className="btn btn-secondary" 
+              style={{ justifyContent: isSidebarOpen ? 'flex-start' : 'center', border: 'none', background: 'rgba(255,255,255,0.05)' }} 
+              title="Dashboard"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               <LayoutDashboard size={18} style={{ flexShrink: 0 }} />
               <span className="sidebar-text">Dashboard</span>
             </button>
             {data && isSidebarOpen && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginLeft: '1.25rem', marginTop: '0', paddingLeft: '0.75rem', borderLeft: '1px solid var(--border-color)' }}>
-                <a href="#visao-geral" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>1. Visão Geral</a>
-                <a href="#uso-real" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>2. Análise de Uso Real</a>
-                <a href="#analise-genero" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>3. Análise por Gênero</a>
+                <a href="#visao-geral" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>1. Composição</a>
+                <a href="#perfil-cantores" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>2. Perfis & Cruzamentos</a>
+                <a href="#uso-real" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>3. Desempenho & Histórico</a>
+                <a href="#analise-genero" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>4. Análise por Gênero</a>
               </div>
             )}
           </nav>
@@ -43,7 +49,7 @@ function App() {
 
         <div style={{ marginTop: 'auto', display: isSidebarOpen ? 'block' : 'none' }}>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            Louvor Metria <br /> versão 1.1.0
+            Louvor Metria <br /> versão 1.2.0
           </p>
         </div>
 
@@ -66,9 +72,10 @@ function App() {
           </div>
           {data && (
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              <a href="#visao-geral" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>1. Visão Geral</a>
-              <a href="#uso-real" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>2. Uso Real</a>
-              <a href="#analise-genero" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>3. Gênero</a>
+              <a href="#visao-geral" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>1. Composição</a>
+              <a href="#perfil-cantores" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>2. Perfis</a>
+              <a href="#uso-real" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>3. Histórico</a>
+              <a href="#analise-genero" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>4. Gênero</a>
               <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
               <button
                 className="btn btn-secondary"
