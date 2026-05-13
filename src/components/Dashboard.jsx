@@ -6,6 +6,7 @@ import {
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#84cc16'];
+const GENDER_COLORS = { 'Masculino': '#3b82f6', 'Feminino': '#ec4899', 'Não informado': '#94a3b8' };
 
 const DataTable = ({ title, columns, data, defaultLimit }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -15,7 +16,7 @@ const DataTable = ({ title, columns, data, defaultLimit }) => {
 
   return (
     <div className="glass-panel h-full" style={{ display: 'flex', flexDirection: 'column' }}>
-      {title && <h3 className="mb-4 text-xl font-bold">{title}</h3>}
+      {title && <h3 className="chart-title">{title}</h3>}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -75,7 +76,7 @@ const DataTable = ({ title, columns, data, defaultLimit }) => {
 
 const HeatmapTable = ({ title, data, columns, rowKey, maxValue }) => (
   <div>
-    <h3 className="mb-4 text-xl font-bold">{title}</h3>
+    <h3 className="chart-title">{title}</h3>
     <div className="glass-panel overflow-x-auto">
       <table className="w-full text-center border-collapse">
         <thead>
@@ -139,6 +140,15 @@ export default function Dashboard({ data }) {
     const tonsPorCantorMap = {}; 
     const execucoesPorCancao = {}; 
     
+    // Variáveis de Gênero
+    const generoCountMap = {};       // gênero -> nº de canções
+    const generoCantorSet = {};      // gênero -> Set de cantores
+    const generoTomMap = {};         // gênero -> { tom: count }
+    const generoTipoMap = {};        // gênero -> { tipo: count }
+    const generoEpocaMap = {};       // gênero -> { epoca: count }
+    const generoExecsMap = {};       // gênero -> nº de execuções (uso real)
+    const cantorGeneroMap = {};      // cantor -> gênero
+
     // Novas Variáveis para Análise de Execução Temporal (Blocos 20 a 28)
     const cantorExecsMap = {};
     const tomExecsMap = {};
@@ -150,7 +160,7 @@ export default function Dashboard({ data }) {
     const ultimaExecucao = {}; 
     const cantorDataMap = {}; 
     
-    const standardCols = ['titulo', 'tom', 'cantor', 'tipo', 'epoca'];
+    const standardCols = ['titulo', 'tom', 'cantor', 'genero', 'tipo', 'epoca'];
     const dateColumns = data.length > 0 ? Object.keys(data[0]).filter(k => !standardCols.includes(k.toLowerCase())) : [];
 
     const parseDateStr = (str) => {
@@ -180,6 +190,8 @@ export default function Dashboard({ data }) {
       cantores.add(c);
       cantorCountMap[c] = (cantorCountMap[c] || 0) + 1;
       
+      const gen = d.genero || 'Não informado';
+      
       let t = d.tom?.trim() || 'N/A';
       if(t && t !== 'N/A') t = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
       tons.add(t);
@@ -189,6 +201,21 @@ export default function Dashboard({ data }) {
       if (tp.length > 0) tp = tp.charAt(0).toUpperCase() + tp.slice(1).toLowerCase();
       tiposSet.add(tp);
       tipoCountMap[tp] = (tipoCountMap[tp] || 0) + 1;
+      
+      // Gênero aggregations
+      generoCountMap[gen] = (generoCountMap[gen] || 0) + 1;
+      if (!generoCantorSet[gen]) generoCantorSet[gen] = new Set();
+      generoCantorSet[gen].add(c);
+      cantorGeneroMap[c] = gen;
+      
+      if (!generoTomMap[gen]) generoTomMap[gen] = {};
+      generoTomMap[gen][t] = (generoTomMap[gen][t] || 0) + 1;
+      
+      if (!generoTipoMap[gen]) generoTipoMap[gen] = {};
+      generoTipoMap[gen][tp] = (generoTipoMap[gen][tp] || 0) + 1;
+      
+      if (!generoEpocaMap[gen]) generoEpocaMap[gen] = {};
+      generoEpocaMap[gen][epocaFormatted] = (generoEpocaMap[gen][epocaFormatted] || 0) + 1;
       
       if (!cantorTipoMap[c]) cantorTipoMap[c] = {};
       cantorTipoMap[c][tp] = (cantorTipoMap[c][tp] || 0) + 1;
@@ -237,6 +264,7 @@ export default function Dashboard({ data }) {
       if (t !== 'N/A') tomExecsMap[t] = (tomExecsMap[t] || 0) + execs;
       tipoExecsMap[tp] = (tipoExecsMap[tp] || 0) + execs;
       epocaExecsMap[epocaFormatted] = (epocaExecsMap[epocaFormatted] || 0) + execs;
+      generoExecsMap[gen] = (generoExecsMap[gen] || 0) + execs;
     });
 
     // Repertório
@@ -383,17 +411,73 @@ export default function Dashboard({ data }) {
         };
     });
 
+    // ============================
+    // Dados de Gênero
+    // ============================
+    const generos = Object.keys(generoCountMap).sort();
+    const generoCantorCountData = generos.map(g => ({ name: g, valor: generoCantorSet[g]?.size || 0 }));
+    const generoCancoesData = generos.map(g => ({ name: g, valor: generoCountMap[g] || 0, porcentagem: ((generoCountMap[g] / total) * 100).toFixed(1) + '%' }));
+    
+    // Tons por Gênero (stacked bar)
+    const generoTomChartData = tonsArr.filter(t => t !== 'N/A').map(t => {
+      const row = { name: t };
+      generos.forEach(g => { row[g] = generoTomMap[g]?.[t] || 0; });
+      return row;
+    }).filter(row => generos.some(g => row[g] > 0)).sort((a, b) => {
+      const sumA = generos.reduce((s, g) => s + a[g], 0);
+      const sumB = generos.reduce((s, g) => s + b[g], 0);
+      return sumB - sumA;
+    }).slice(0, 12);
+
+    // Tipos por Gênero (stacked bar)
+    const generoTipoChartData = tipos.map(tp => {
+      const row = { name: tp };
+      generos.forEach(g => { row[g] = generoTipoMap[g]?.[tp] || 0; });
+      return row;
+    }).filter(row => generos.some(g => row[g] > 0)).sort((a, b) => {
+      const sumA = generos.reduce((s, g) => s + a[g], 0);
+      const sumB = generos.reduce((s, g) => s + b[g], 0);
+      return sumB - sumA;
+    });
+
+    // Execuções por Gênero (uso real)
+    const generoExecsData = generos.map(g => ({ name: g, valor: generoExecsMap[g] || 0, porcentagem: totalExecucoes > 0 ? ((generoExecsMap[g] / totalExecucoes) * 100).toFixed(1) + '%' : '0%' })).filter(x => x.valor > 0);
+
+    // Heatmap Gênero x Tom
+    const heatmapGeneroTom = buildHeatmap(generoTomMap, tonsArr, 'genero');
+    // Heatmap Gênero x Tipo
+    const heatmapGeneroTipo = buildHeatmap(generoTipoMap, tipos, 'genero');
+    // Heatmap Gênero x Época
+    const heatmapGeneroEpoca = buildHeatmap(generoEpocaMap, epocas, 'genero');
+
+    // Perfil Comparativo por Gênero
+    const generoProfiles = generos.map(g => {
+      const cancoes = generoCountMap[g] || 0;
+      const cantoresCount = generoCantorSet[g]?.size || 0;
+      const tonsObj = generoTomMap[g] || {};
+      const tiposObj = generoTipoMap[g] || {};
+      let topTom = 'N/A', maxTom = 0;
+      Object.entries(tonsObj).forEach(([t, c]) => { if (c > maxTom) { maxTom = c; topTom = t; } });
+      let topTipo = 'N/A', maxTipo = 0;
+      Object.entries(tiposObj).forEach(([tp, c]) => { if (c > maxTipo) { maxTipo = c; topTipo = tp; } });
+      const mediaPorCantor = cantoresCount > 0 ? (cancoes / cantoresCount).toFixed(1) : '0';
+      return { genero: g, cancoes, cantoresCount, topTom: `${topTom} (${maxTom}x)`, topTipo: `${topTipo} (${maxTipo}x)`, mediaPorCantor, execs: generoExecsMap[g] || 0 };
+    });
+
     return {
       total, cantoresTotais: cantores.size, tonsTotais: tons.size, tiposTotais: tiposSet.size, totalExecucoes,
       antigas, recentes, dateColumns: sortedDates, dateCount,
-      cantoresArr,
+      cantoresArr, generos,
       cantorChartData, epocaChartData, tomChartData, tipoChartData,
       heatmapCantorTipo, heatmapCantorTom, heatmapCantorEpoca, heatmapTipoEpoca, heatmapCantorDomingo,
       resumoCantor, cantorProfiles,
       tonsCompartilhadosArr, tonsExclusivosArr, tonsCompartilhadosChart,
       mediaCancoes, stdCancoes, equilibrioStatus,
       topCancoesArr, todasMestres,
-      cantorUsoData, tomUsoData, tipoUsoData, epocaUsoData, evolucaoTemporal
+      cantorUsoData, tomUsoData, tipoUsoData, epocaUsoData, evolucaoTemporal,
+      // Gênero
+      generoCantorCountData, generoCancoesData, generoTomChartData, generoTipoChartData,
+      generoExecsData, heatmapGeneroTom, heatmapGeneroTipo, heatmapGeneroEpoca, generoProfiles
     };
 
   }, [data]);
@@ -414,7 +498,7 @@ export default function Dashboard({ data }) {
       {/* ---------------------------------------------------- */}
       
       <div id="visao-geral" style={{ scrollMarginTop: '2rem' }}>
-        <h2 className="mb-6 text-2xl font-bold" style={{ color: 'var(--accent-1)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>1. Visão Geral do Repertório</h2>
+        <h2 className="section-title">1. Visão Geral do Repertório</h2>
         <div className="dashboard-grid mb-4">
           <div className="glass-panel summary-card">
             <span className="summary-label">Total de Canções</span>
@@ -437,7 +521,7 @@ export default function Dashboard({ data }) {
 
       <div className="dashboard-grid">
           <div className="glass-panel h-full">
-            <h3 className="mb-4 text-xl font-bold">Canções por Cantor</h3>
+            <h3 className="chart-title">Canções por Cantor</h3>
             <div style={{ height: '300px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.cantorChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -458,7 +542,7 @@ export default function Dashboard({ data }) {
 
       <div className="dashboard-grid">
           <div className="glass-panel h-full">
-            <h3 className="mb-4 text-xl font-bold">Canções por Tom</h3>
+            <h3 className="chart-title">Canções por Tom</h3>
             <div style={{ height: '350px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.tomChartData.slice(0, 10)} margin={{ top: 20, right: 30, left: 0, bottom: 5 }} layout="vertical">
@@ -476,7 +560,7 @@ export default function Dashboard({ data }) {
 
       <div className="dashboard-grid">
           <div className="glass-panel h-full">
-            <h3 className="mb-4 text-xl font-bold">Por Tipo</h3>
+            <h3 className="chart-title">Por Tipo</h3>
             <div style={{ height: '300px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -489,7 +573,7 @@ export default function Dashboard({ data }) {
             </div>
           </div>
           <div className="glass-panel h-full">
-            <h3 className="mb-4 text-xl font-bold">Por Época</h3>
+            <h3 className="chart-title">Por Época</h3>
             <div style={{ height: '300px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -514,7 +598,7 @@ export default function Dashboard({ data }) {
 
       <div className="glass-panel">
         <div className="flex-between mb-6">
-            <h3 className="text-xl font-bold m-0">Perfil Individual por Cantor</h3>
+            <h3 className="chart-title" style={{ margin: 0 }}>Perfil Individual por Cantor</h3>
             <select value={selectedCantor} onChange={e => setSelectedCantor(e.target.value)} className="input-field" style={{ width: 'auto', minWidth: '200px' }}>
                 {stats.cantoresArr.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -544,7 +628,7 @@ export default function Dashboard({ data }) {
       </div>
 
       <div>
-        <h3 className="mb-4 text-xl font-bold">Equilíbrio do Repertório</h3>
+        <h3 className="chart-title">Equilíbrio do Repertório</h3>
         <div className="flex-center gap-2 mb-6" style={{ color: stats.stdCancoes <= stats.mediaCancoes * 0.15 ? '#10b981' : '#f59e0b', padding: '1rem', background: stats.stdCancoes <= stats.mediaCancoes * 0.15 ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)', borderRadius: '0.5rem' }}>
             {stats.stdCancoes <= stats.mediaCancoes * 0.15 ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
             <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{stats.equilibrioStatus}</span>
@@ -560,7 +644,7 @@ export default function Dashboard({ data }) {
           <div id="uso-real" className="animate-fade-in flex flex-col gap-10 mt-8 pt-8" style={{ scrollMarginTop: '2rem' }}>
               
               <div className="flex-between mb-6">
-                <h2 className="text-2xl font-bold" style={{ color: 'var(--accent-1)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', flex: 1 }}>2. Análise de Uso Real e Execuções</h2>
+                <h2 className="section-title" style={{ flex: 1 }}>2. Análise de Uso Real e Execuções</h2>
                 <span style={{ background: 'rgba(59,130,246,0.2)', padding: '0.3rem 0.8rem', borderRadius: '1rem', fontSize: '0.875rem', marginLeft: '1rem' }}>
                     {stats.dateCount} datas identificadas | {stats.totalExecucoes} execuções totais
                 </span>
@@ -569,7 +653,7 @@ export default function Dashboard({ data }) {
               {/* Bloco 19: Top Canções Mais Cantadas */}
               <div className="dashboard-grid">
                   <div className="glass-panel h-full">
-                    <h3 className="mb-4 text-xl font-bold">Top 15 Canções Mais Cantadas</h3>
+                    <h3 className="chart-title">Top 15 Canções Mais Cantadas</h3>
                     <div style={{ height: '350px' }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={stats.topCancoesArr} margin={{ top: 20, right: 30, left: 0, bottom: 5 }} layout="vertical">
@@ -590,7 +674,7 @@ export default function Dashboard({ data }) {
               {/* Blocos 21 a 24: Uso Real */}
               <div className="dashboard-grid">
                   <div className="glass-panel h-full">
-                    <h3 className="mb-4 text-xl font-bold">Cantores que Mais Cantaram (Uso Real)</h3>
+                    <h3 className="chart-title">Cantores que Mais Cantaram (Uso Real)</h3>
                     <div style={{ height: '300px' }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={stats.cantorUsoData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -614,7 +698,7 @@ export default function Dashboard({ data }) {
 
               {/* Blocos 25 e 26: Evolução Temporal */}
               <div>
-                <h3 className="mb-4 text-xl font-bold">Evolução Temporal e Acúmulo</h3>
+                <h3 className="chart-title">Evolução Temporal e Acúmulo</h3>
                 <div className="glass-panel" style={{ height: '400px' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={stats.evolucaoTemporal} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -654,6 +738,155 @@ export default function Dashboard({ data }) {
               <AlertCircle size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
               <p>Adicione colunas de datas com "TRUE" ou "X" na sua planilha para ver as Análises de Uso Real e Temporais (Ranking, Evolução, Esquecidas).</p>
           </div>
+      )}
+      {/* ---------------------------------------------------- */}
+      {/* PARTE 3: ANÁLISE POR GÊNERO */}
+      {/* ---------------------------------------------------- */}
+
+      {stats.generos && stats.generos.length > 0 && (
+        <div id="analise-genero" className="animate-fade-in flex flex-col gap-10 mt-8 pt-8" style={{ scrollMarginTop: '2rem' }}>
+          <h2 className="section-title">3. Análise por Gênero</h2>
+
+          {/* Cards comparativos por gênero */}
+          <div className="dashboard-grid" style={{ gridTemplateColumns: `repeat(${Math.min(stats.generoProfiles.length, 3)}, 1fr)` }}>
+            {stats.generoProfiles.map(prof => (
+              <div key={prof.genero} className="glass-panel" style={{ borderLeft: `4px solid ${GENDER_COLORS[prof.genero] || '#94a3b8'}` }}>
+                <h3 className="chart-title" style={{ color: GENDER_COLORS[prof.genero] || '#94a3b8' }}>{prof.genero}</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="summary-card">
+                    <span className="summary-label">Cantores</span>
+                    <span className="summary-value" style={{ fontSize: '1.8rem', color: GENDER_COLORS[prof.genero] || '#94a3b8' }}>{prof.cantoresCount}</span>
+                  </div>
+                  <div className="summary-card">
+                    <span className="summary-label">Canções</span>
+                    <span className="summary-value" style={{ fontSize: '1.8rem' }}>{prof.cancoes}</span>
+                  </div>
+                  <div className="summary-card">
+                    <span className="summary-label">Tom Top</span>
+                    <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{prof.topTom}</span>
+                  </div>
+                  <div className="summary-card">
+                    <span className="summary-label">Tipo Top</span>
+                    <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{prof.topTipo}</span>
+                  </div>
+                  <div className="summary-card">
+                    <span className="summary-label">Média canções/cantor</span>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-3)' }}>{prof.mediaPorCantor}</span>
+                  </div>
+                  {stats.dateCount > 0 && (
+                    <div className="summary-card">
+                      <span className="summary-label">Execuções</span>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-4)' }}>{prof.execs}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Cantores por Gênero (Donut) + Canções por Gênero (Bar) */}
+          <div className="dashboard-grid">
+            <div className="glass-panel h-full">
+              <h3 className="chart-title">Cantores por Gênero</h3>
+              <div style={{ height: '300px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={stats.generoCantorCountData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="valor" paddingAngle={5} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                      {stats.generoCantorCountData.map((entry) => <Cell key={entry.name} fill={GENDER_COLORS[entry.name] || '#94a3b8'} />)}
+                    </Pie>
+                    <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} itemStyle={{ color: '#f8fafc' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div className="glass-panel h-full">
+              <h3 className="chart-title">Canções por Gênero</h3>
+              <div style={{ height: '300px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.generoCancoesData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                    <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                    <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                    <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#f8fafc' }} />
+                    <Bar dataKey="valor" name="Canções" radius={[4, 4, 0, 0]}>
+                      {stats.generoCancoesData.map((entry) => <Cell key={entry.name} fill={GENDER_COLORS[entry.name] || '#94a3b8'} />)}
+                      <LabelList dataKey="valor" position="top" fill="#f8fafc" />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <DataTable title="Canções por Gênero" columns={[{ header: 'Gênero', accessor: 'name' }, { header: 'Canções', accessor: 'valor' }, { header: '%', accessor: 'porcentagem' }]} data={stats.generoCancoesData} />
+          </div>
+
+          {/* Tons por Gênero (Stacked Bar) */}
+          <div className="glass-panel">
+            <h3 className="chart-title">Tons por Gênero</h3>
+            <div style={{ height: '400px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.generoTomChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                  <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                  <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#f8fafc' }} />
+                  <Legend />
+                  {stats.generos.map(g => (
+                    <Bar key={g} dataKey={g} stackId="genero" fill={GENDER_COLORS[g] || '#94a3b8'} radius={stats.generos.indexOf(g) === stats.generos.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Tipos por Gênero (Stacked Bar) */}
+          <div className="glass-panel">
+            <h3 className="chart-title">Tipos por Gênero</h3>
+            <div style={{ height: '350px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.generoTipoChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                  <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                  <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#f8fafc' }} />
+                  <Legend />
+                  {stats.generos.map(g => (
+                    <Bar key={g} dataKey={g} stackId="genero" fill={GENDER_COLORS[g] || '#94a3b8'} radius={stats.generos.indexOf(g) === stats.generos.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Heatmaps: Gênero × Tom e Gênero × Época */}
+          <div className="dashboard-grid">
+            <HeatmapTable title="Gênero × Tom" data={stats.heatmapGeneroTom.data} columns={stats.heatmapGeneroTom.columns} rowKey="genero" maxValue={stats.heatmapGeneroTom.max} />
+            <HeatmapTable title="Gênero × Época" data={stats.heatmapGeneroEpoca.data} columns={stats.heatmapGeneroEpoca.columns} rowKey="genero" maxValue={stats.heatmapGeneroEpoca.max} />
+          </div>
+
+          {/* Execuções por Gênero (Uso Real) — só aparece se houver datas */}
+          {stats.dateCount > 0 && stats.generoExecsData.length > 0 && (
+            <div className="dashboard-grid">
+              <div className="glass-panel h-full">
+                <h3 className="chart-title">Execuções por Gênero (Uso Real)</h3>
+                <div style={{ height: '300px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.generoExecsData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                      <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                      <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                      <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#f8fafc' }} />
+                      <Bar dataKey="valor" name="Execuções" radius={[4, 4, 0, 0]}>
+                        {stats.generoExecsData.map((entry) => <Cell key={entry.name} fill={GENDER_COLORS[entry.name] || '#94a3b8'} />)}
+                        <LabelList dataKey="valor" position="top" fill="#f8fafc" />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <DataTable title="Execuções por Gênero" columns={[{ header: 'Gênero', accessor: 'name' }, { header: 'Execuções', accessor: 'valor' }, { header: '%', accessor: 'porcentagem' }]} data={stats.generoExecsData} />
+            </div>
+          )}
+        </div>
       )}
       
     </div>
