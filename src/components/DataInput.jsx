@@ -132,24 +132,64 @@ export default function DataInput({ onDataLoaded }) {
           display: 'flex', justifyContent: 'center', alignItems: 'center',
           zIndex: 99999, padding: '2rem'
         }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', background: 'var(--bg-secondary)', position: 'relative' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '720px', background: 'var(--bg-secondary)', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
             <button onClick={() => setShowHelp(false)} className="btn btn-secondary" style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.5rem' }}>
               <X size={20} />
             </button>
             <h2 className="mb-4">Como formatar sua planilha?</h2>
             <p>Para que o painel funcione corretamente, sua planilha deve conter colunas com os seguintes nomes na primeira linha (cabeçalho):</p>
             
-            <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem', lineHeight: '1.8' }}>
-              <li><strong>Titulo</strong>: O nome da música</li>
-              <li><strong>Tom</strong>: A tonalidade (ex: C, G, Am)</li>
-              <li><strong>Cantor</strong>: Quem canta a música</li>
-              <li><strong>Tipo</strong>: O estilo (ex: Animada, Espiritual, Adoração)</li>
-              <li><strong>Epoca</strong>: A época (ex: Antiga, Recente)</li>
-            </ul>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              {[
+                { col: 'Titulo', desc: 'O nome da música', color: '#3b82f6' },
+                { col: 'Tom', desc: 'Tonalidade (ex: C, G, Am)', color: '#8b5cf6' },
+                { col: 'Cantor', desc: 'Quem canta a música', color: '#10b981' },
+                { col: 'Genero', desc: 'Gênero do cantor (M ou F)', color: '#ec4899' },
+                { col: 'Tipo', desc: 'Estilo (ex: Adoração)', color: '#f59e0b' },
+                { col: 'Epoca', desc: 'Época (Antiga ou Recente)', color: '#06b6d4' },
+              ].map(item => (
+                <div key={item.col} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', borderLeft: `3px solid ${item.color}` }}>
+                  <strong style={{ color: item.color, minWidth: '55px' }}>{item.col}</strong>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{item.desc}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background: 'rgba(236,72,153,0.08)', border: '1px solid rgba(236,72,153,0.2)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+              <strong style={{ color: '#ec4899' }}>Valores aceitos para Genero:</strong>
+              <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
+                <strong>M</strong>, Masculino, Homem · <strong>F</strong>, Feminino, Mulher
+              </span>
+            </div>
+
+            <p style={{ marginBottom: '0.75rem', fontWeight: 600, fontSize: '0.9rem' }}>Exemplo de como sua planilha deve ficar:</p>
+            <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.15)' }}>
+                    {['Titulo', 'Tom', 'Cantor', 'Genero', 'Tipo', 'Epoca', '10/05', '17/05'].map(h => (
+                      <th key={h} style={{ padding: '0.4rem 0.6rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 600 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Grandioso', 'G', 'João', 'M', 'Adoração', 'Antiga', 'TRUE', ''],
+                    ['Santo Espírito', 'C', 'Maria', 'F', 'Espiritual', 'Recente', '', 'X'],
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      {row.map((cell, j) => (
+                        <td key={j} style={{ padding: '0.4rem 0.6rem', color: cell === 'TRUE' || cell === 'X' ? '#10b981' : 'var(--text-primary)' }}>{cell || <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             
             <p>Você pode adicionar <strong>colunas de datas</strong> (ex: 10/05/2026, 17/05/2026, etc.) após a coluna de Epoca para monitorar as execuções. Para que uma canção seja contabilizada naquele dia, preencha a célula com <strong>TRUE</strong> ou <strong>X</strong> (deixe vazio ou use FALSE caso não tenha sido tocada).</p>
 
-            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', textAlign: 'center' }}>
+            <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', textAlign: 'center' }}>
               <p className="mb-4" style={{ fontWeight: 600 }}>Quer facilitar? Baixe nosso modelo pronto:</p>
               <a href={`${BASE_URL}modelo.csv`} download className="btn btn-primary" style={{ textDecoration: 'none' }}>
                 <Download size={18} /> Baixar modelo.csv

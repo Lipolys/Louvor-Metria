@@ -26,14 +26,25 @@ const normalizeData = (data) => {
       }
     }
     
+    // Normalize gender values
+    const rawGenero = (normalized.genero || normalized.sexo || normalized.gender || '').toString().trim().toLowerCase();
+    let generoNorm = 'Não informado';
+    if (rawGenero === 'm' || rawGenero === 'masculino' || rawGenero === 'homem' || rawGenero === 'male') {
+      generoNorm = 'Masculino';
+    } else if (rawGenero === 'f' || rawGenero === 'feminino' || rawGenero === 'mulher' || rawGenero === 'female') {
+      generoNorm = 'Feminino';
+    }
+
     // Default fallback mappings if the sheet uses specific column names
     return {
       titulo: normalized.titulo || normalized.musica || normalized.nome || '',
       tom: normalized.tom || normalized.tonalidade || '',
       cantor: normalized.cantor || normalized.vocal || normalized.ministro || '',
+      genero: generoNorm,
       tipo: normalized.tipo || normalized.estilo || '',
       epoca: normalized.epoca || normalized.tempo || '',
-      ...normalized
+      ...normalized,
+      genero: generoNorm, // ensure normalized value wins over spread
     };
   }).filter(row => row.titulo); // only keep rows with at least a title
 };

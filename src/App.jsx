@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import DataInput from './components/DataInput';
 import Dashboard from './components/Dashboard';
-import { Music, LayoutDashboard, ChevronLeft } from 'lucide-react';
+import { Music, LayoutDashboard, ChevronLeft, Trash2 } from 'lucide-react';
 
 const BASE_URL = import.meta.env.BASE_URL;
 
@@ -11,6 +11,10 @@ function App() {
 
   const handleDataLoaded = (parsedData) => {
     setData(parsedData);
+  };
+
+  const handleClearData = () => {
+    setData(null);
   };
 
   return (
@@ -31,6 +35,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginLeft: '1.25rem', marginTop: '0', paddingLeft: '0.75rem', borderLeft: '1px solid var(--border-color)' }}>
                 <a href="#visao-geral" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>1. Visão Geral</a>
                 <a href="#uso-real" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>2. Análise de Uso Real</a>
+                <a href="#analise-genero" className="sidebar-text" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none', padding: '0.25rem 0' }}>3. Análise por Gênero</a>
               </div>
             )}
           </nav>
@@ -38,7 +43,7 @@ function App() {
 
         <div style={{ marginTop: 'auto', display: isSidebarOpen ? 'block' : 'none' }}>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            Louvor Metria <br /> versão 1.0.0
+            Louvor Metria <br /> versão 1.1.0
           </p>
         </div>
 
@@ -60,9 +65,19 @@ function App() {
             <p>Gerencie as canções e visualize análises estatísticas profundas.</p>
           </div>
           {data && (
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
               <a href="#visao-geral" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>1. Visão Geral</a>
-              <a href="#uso-real" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>2. Análise de Uso Real</a>
+              <a href="#uso-real" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>2. Uso Real</a>
+              <a href="#analise-genero" className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>3. Gênero</a>
+              <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
+              <button
+                className="btn btn-secondary"
+                onClick={handleClearData}
+                style={{ fontSize: '0.85rem', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}
+                title="Limpar dados do dashboard"
+              >
+                <Trash2 size={16} /> Limpar
+              </button>
             </div>
           )}
         </header>
