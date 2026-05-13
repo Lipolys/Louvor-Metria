@@ -3,12 +3,25 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LabelList,
   PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart, Area, ReferenceLine
 } from 'recharts';
-import { AlertCircle, CheckCircle2, Eye, EyeOff, TrendingUp } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, TrendingUp, Users, Music, Calendar, BarChart3 } from 'lucide-react';
+import ChartHelp from './ChartHelp';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#84cc16'];
 const GENDER_COLORS = { 'Masculino': '#3b82f6', 'Feminino': '#ec4899', 'Não informado': '#94a3b8' };
 
-const DataTable = ({ title, columns, data, defaultLimit }) => {
+const HELP = {
+  heatmap: 'A intensidade da cor vermelha indica a quantidade: quanto mais forte, maior o valor naquela célula. Linhas representam uma dimensão (ex: cantor) e colunas outra (ex: tipo). Use para identificar padrões de concentração e combinações mais frequentes.',
+  evolucao: 'A linha azul mostra quantas canções foram tocadas em cada data. A linha amarela indica estreias (canções tocadas pela 1ª vez). A linha verde mostra o acúmulo total do repertório ao longo do tempo — se a curva estabiliza, poucas canções novas estão entrando.',
+  pareto: 'Baseado na regra 80/20: poucas canções podem concentrar a maioria das execuções. As barras azuis mostram execuções individuais (da mais tocada à menos). A linha amarela mostra o percentual acumulado. Se poucas canções atingem 80%, o repertório está muito concentrado.',
+  status: 'Ativa = tocada nos últimos 3 domingos. Estreante = tocada pela primeira vez no último domingo. Esquecida = já foi tocada, mas não aparece recentemente. Nunca Cantada = registrada no repertório mas nunca tocada nas datas disponíveis.',
+  versatilidade: 'Mede quantos tons e tipos diferentes cada cantor interpreta. Quanto maior a barra total (tons + tipos), mais versátil é o cantor. Um cantor versátil canta em vários tons e estilos diferentes.',
+  equilibrio: 'Compara se as canções estão bem distribuídas entre os cantores usando média e desvio padrão. Desvio baixo (< 15% da média) = equilibrado. Desvio alto = poucas pessoas concentram muitas canções.',
+  eficiencia: 'Eficiência = nº de execuções ÷ nº de canções do cantor. Mostra quantas vezes, em média, cada canção de um cantor foi de fato tocada. "% Ociosa" indica canções que nunca saíram do papel.',
+  stackedBar: 'Cada barra mostra o total dividido por gênero (cores). Use para comparar como tons ou tipos se distribuem entre os gêneros. Barras mais altas = categorias mais populares no geral.',
+  maioresMenores: 'Tons maiores (C, D, G, A…) tendem a soar mais alegres e brilhantes. Tons menores (Am, Em, Dm…) tendem a ser mais introspectivos e reflexivos. Esse gráfico mostra o equilíbrio emocional do repertório.',
+};
+
+const DataTable = ({ title, columns, data, defaultLimit, helpText }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
   const hasLimit = defaultLimit && data.length > defaultLimit;
@@ -16,7 +29,12 @@ const DataTable = ({ title, columns, data, defaultLimit }) => {
 
   return (
     <div className="glass-panel h-full" style={{ display: 'flex', flexDirection: 'column' }}>
-      {title && <h3 className="chart-title">{title}</h3>}
+      {title && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+          <h3 className="chart-title" style={{ margin: 0 }}>{title}</h3>
+          {helpText && <ChartHelp text={helpText} />}
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -74,9 +92,12 @@ const DataTable = ({ title, columns, data, defaultLimit }) => {
   );
 };
 
-const HeatmapTable = ({ title, data, columns, rowKey, maxValue }) => (
+const HeatmapTable = ({ title, data, columns, rowKey, maxValue, helpText }) => (
   <div>
-    <h3 className="chart-title">{title}</h3>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+      <h3 className="chart-title" style={{ margin: 0 }}>{title}</h3>
+      {helpText && <ChartHelp text={helpText} />}
+    </div>
     <div className="glass-panel overflow-x-auto">
       <table className="w-full text-center border-collapse">
         <thead>
@@ -573,7 +594,10 @@ export default function Dashboard({ data }) {
       {/* ---------------------------------------------------- */}
       
       <div id="visao-geral" style={{ scrollMarginTop: '2rem' }}>
-        <h2 className="section-title">1. Visão Geral do Repertório</h2>
+        <h2 className="section-title flex-center gap-2" style={{ justifyContent: 'flex-start' }}>
+          <Music size={24} /> 1. Composição do Repertório
+        </h2>
+        <p className="section-subtitle">Distribuição geral das canções por cantor, tom, tipo e período.</p>
         <div className="dashboard-grid mb-4">
           <div className="glass-panel summary-card">
             <span className="summary-label">Total de Canções</span>
@@ -596,7 +620,7 @@ export default function Dashboard({ data }) {
 
       <div className="dashboard-grid">
           <div className="glass-panel h-full">
-            <h3 className="chart-title">Canções por Cantor</h3>
+            <h3 className="chart-title">Distribuição por Cantor</h3>
             <div style={{ height: '300px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.cantorChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -612,12 +636,12 @@ export default function Dashboard({ data }) {
               </ResponsiveContainer>
             </div>
           </div>
-          <DataTable columns={[{ header: 'Cantor', accessor: 'name' }, { header: 'Canções', accessor: 'valor' }]} data={stats.cantorChartData} />
+          <DataTable title="Ranking de Canções por Cantor" columns={[{ header: 'Cantor', accessor: 'name' }, { header: 'Canções', accessor: 'valor' }]} data={stats.cantorChartData} />
       </div>
 
       <div className="dashboard-grid">
           <div className="glass-panel h-full">
-            <h3 className="chart-title">Canções por Tom</h3>
+            <h3 className="chart-title">Tonalidades Mais Usadas</h3>
             <div style={{ height: '350px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.tomChartData.slice(0, 10)} margin={{ top: 20, right: 30, left: 0, bottom: 5 }} layout="vertical">
@@ -630,12 +654,12 @@ export default function Dashboard({ data }) {
               </ResponsiveContainer>
             </div>
           </div>
-          <DataTable columns={[{ header: 'Tom', accessor: 'name' }, { header: 'Canções', accessor: 'valor' }]} data={stats.tomChartData} />
+          <DataTable title="Resumo de Tonalidades" columns={[{ header: 'Tom', accessor: 'name' }, { header: 'Canções', accessor: 'valor' }]} data={stats.tomChartData} />
       </div>
 
       <div className="dashboard-grid">
           <div className="glass-panel h-full">
-            <h3 className="chart-title">Por Tipo</h3>
+            <h3 className="chart-title">Classificação por Tipo</h3>
             <div style={{ height: '300px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -648,7 +672,7 @@ export default function Dashboard({ data }) {
             </div>
           </div>
           <div className="glass-panel h-full">
-            <h3 className="chart-title">Por Época</h3>
+            <h3 className="chart-title">Período (Antiga vs Recente)</h3>
             <div style={{ height: '300px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -660,20 +684,27 @@ export default function Dashboard({ data }) {
               </ResponsiveContainer>
             </div>
           </div>
-          <DataTable title="Resumo Época" columns={[{ header: 'Época', accessor: 'name' }, { header: 'Nº', accessor: 'valor' }, { header: '%', accessor: 'porcentagem' }]} data={stats.epocaChartData} />
+          <DataTable title="Resumo por Período" columns={[{ header: 'Época', accessor: 'name' }, { header: 'Nº', accessor: 'valor' }, { header: '%', accessor: 'porcentagem' }]} data={stats.epocaChartData} />
       </div>
 
-      <HeatmapTable title="Cantor × Tipo" data={stats.heatmapCantorTipo.data} columns={stats.heatmapCantorTipo.columns} rowKey="cantor" maxValue={stats.heatmapCantorTipo.max} />
-      <HeatmapTable title="Cantor × Tom" data={stats.heatmapCantorTom.data} columns={stats.heatmapCantorTom.columns} rowKey="cantor" maxValue={stats.heatmapCantorTom.max} />
+      <div id="perfil-cantores" style={{ scrollMarginTop: '2rem' }} className="mt-8 pt-8">
+        <h2 className="section-title flex-center gap-2" style={{ justifyContent: 'flex-start' }}>
+          <Users size={24} /> 2. Perfil & Cruzamentos
+        </h2>
+        <p className="section-subtitle">Análise cruzada entre cantores, tons, tipos e períodos.</p>
+      </div>
+
+      <HeatmapTable title="Cantor × Tipo de Música" helpText={HELP.heatmap} data={stats.heatmapCantorTipo.data} columns={stats.heatmapCantorTipo.columns} rowKey="cantor" maxValue={stats.heatmapCantorTipo.max} />
+      <HeatmapTable title="Cantor × Tonalidade" helpText={HELP.heatmap} data={stats.heatmapCantorTom.data} columns={stats.heatmapCantorTom.columns} rowKey="cantor" maxValue={stats.heatmapCantorTom.max} />
       
       <div className="dashboard-grid">
-        <HeatmapTable title="Cantor × Época" data={stats.heatmapCantorEpoca.data} columns={stats.heatmapCantorEpoca.columns} rowKey="cantor" maxValue={stats.heatmapCantorEpoca.max} />
-        <HeatmapTable title="Tipo × Época" data={stats.heatmapTipoEpoca.data} columns={stats.heatmapTipoEpoca.columns} rowKey="tipo" maxValue={stats.heatmapTipoEpoca.max} />
+        <HeatmapTable title="Cantor × Período" helpText={HELP.heatmap} data={stats.heatmapCantorEpoca.data} columns={stats.heatmapCantorEpoca.columns} rowKey="cantor" maxValue={stats.heatmapCantorEpoca.max} />
+        <HeatmapTable title="Tipo × Período" helpText={HELP.heatmap} data={stats.heatmapTipoEpoca.data} columns={stats.heatmapTipoEpoca.columns} rowKey="tipo" maxValue={stats.heatmapTipoEpoca.max} />
       </div>
 
       <div className="glass-panel">
         <div className="flex-between mb-6">
-            <h3 className="chart-title" style={{ margin: 0 }}>Perfil Individual por Cantor</h3>
+            <h3 className="chart-title" style={{ margin: 0 }}>Perfil Individual</h3>
             <select value={selectedCantor} onChange={e => setSelectedCantor(e.target.value)} className="input-field" style={{ width: 'auto', minWidth: '200px' }}>
                 {stats.cantoresArr.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -703,7 +734,10 @@ export default function Dashboard({ data }) {
       </div>
 
       <div>
-        <h3 className="chart-title">Equilíbrio do Repertório</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h3 className="chart-title" style={{ margin: 0 }}>Equilíbrio do Repertório</h3>
+          <ChartHelp text={HELP.equilibrio} />
+        </div>
         <div className="flex-center gap-2 mb-6" style={{ color: stats.stdCancoes <= stats.mediaCancoes * 0.15 ? '#10b981' : '#f59e0b', padding: '1rem', background: stats.stdCancoes <= stats.mediaCancoes * 0.15 ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)', borderRadius: '0.5rem' }}>
             {stats.stdCancoes <= stats.mediaCancoes * 0.15 ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
             <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{stats.equilibrioStatus}</span>
@@ -715,7 +749,10 @@ export default function Dashboard({ data }) {
       {stats.tonsMaioresMenoresData.length > 0 && (
         <div className="dashboard-grid">
           <div className="glass-panel h-full">
-            <h3 className="chart-title">Tonalidades: Maiores vs Menores</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 className="chart-title" style={{ margin: 0 }}>Tonalidades: Maiores vs Menores</h3>
+              <ChartHelp text={HELP.maioresMenores} />
+            </div>
             <div style={{ height: '280px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -732,7 +769,10 @@ export default function Dashboard({ data }) {
             </p>
           </div>
           <div className="glass-panel h-full">
-            <h3 className="chart-title">Índice de Versatilidade dos Cantores</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 className="chart-title" style={{ margin: 0 }}>Versatilidade dos Cantores</h3>
+              <ChartHelp text={HELP.versatilidade} />
+            </div>
             <div style={{ height: '280px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.versatilityData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }} layout="vertical">
@@ -760,17 +800,20 @@ export default function Dashboard({ data }) {
       {stats.dateCount > 0 ? (
           <div id="uso-real" className="animate-fade-in flex flex-col gap-10 mt-8 pt-8" style={{ scrollMarginTop: '2rem' }}>
               
-              <div className="flex-between mb-6">
-                <h2 className="section-title" style={{ flex: 1 }}>2. Análise de Uso Real e Execuções</h2>
-                <span style={{ background: 'rgba(59,130,246,0.2)', padding: '0.3rem 0.8rem', borderRadius: '1rem', fontSize: '0.875rem', marginLeft: '1rem' }}>
-                    {stats.dateCount} datas identificadas | {stats.totalExecucoes} execuções totais
+              <div className="flex-between mb-6" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem' }}>
+                <h2 className="section-title flex-center gap-2" style={{ margin: 0, borderBottom: 'none', paddingBottom: 0, justifyContent: 'flex-start' }}>
+                  <TrendingUp size={24} /> 3. Desempenho & Histórico
+                </h2>
+                <span style={{ background: 'rgba(59,130,246,0.2)', padding: '0.3rem 0.8rem', borderRadius: '1rem', fontSize: '0.875rem' }}>
+                    {stats.dateCount} datas | {stats.totalExecucoes} execuções
                 </span>
               </div>
+              <p className="section-subtitle">Análise de frequência, eficiência e evolução temporal baseada nas datas.</p>
 
               {/* Bloco 19: Top Canções Mais Cantadas */}
               <div className="dashboard-grid">
                   <div className="glass-panel h-full">
-                    <h3 className="chart-title">Top 15 Canções Mais Cantadas</h3>
+                    <h3 className="chart-title">Canções Mais Tocadas (Top 15)</h3>
                     <div style={{ height: '350px' }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={stats.topCancoesArr} margin={{ top: 20, right: 30, left: 0, bottom: 5 }} layout="vertical">
@@ -785,13 +828,13 @@ export default function Dashboard({ data }) {
                       </ResponsiveContainer>
                     </div>
                   </div>
-                  <DataTable defaultLimit={15} columns={[{ header: 'Canção', accessor: 'titulo' }, { header: 'Execuções', accessor: 'execs' }, { header: 'Cobertura', accessor: 'cobertura' }]} data={stats.topCancoesArr} />
+                  <DataTable title="Ranking de Canções Mais Tocadas" defaultLimit={15} columns={[{ header: 'Canção', accessor: 'titulo' }, { header: 'Execuções', accessor: 'execs' }, { header: 'Cobertura', accessor: 'cobertura' }]} data={stats.topCancoesArr} />
               </div>
 
               {/* Blocos 21 a 24: Uso Real */}
               <div className="dashboard-grid">
                   <div className="glass-panel h-full">
-                    <h3 className="chart-title">Cantores que Mais Cantaram (Uso Real)</h3>
+                    <h3 className="chart-title">Execuções por Cantor</h3>
                     <div style={{ height: '300px' }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={stats.cantorUsoData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -804,18 +847,21 @@ export default function Dashboard({ data }) {
                       </ResponsiveContainer>
                     </div>
                   </div>
-                  <DataTable columns={[{ header: 'Cantor', accessor: 'name' }, { header: 'Execuções', accessor: 'valor' }, { header: '%', accessor: 'porcentagem' }]} data={stats.cantorUsoData} />
+                  <DataTable title="Total de Execuções por Cantor" columns={[{ header: 'Cantor', accessor: 'name' }, { header: 'Execuções', accessor: 'valor' }, { header: '%', accessor: 'porcentagem' }]} data={stats.cantorUsoData} />
               </div>
 
               <div className="dashboard-grid">
-                  <DataTable title="Tons (Uso Real)" columns={[{ header: 'Tom', accessor: 'name' }, { header: 'Nº', accessor: 'valor' }]} data={stats.tomUsoData} />
-                  <DataTable title="Tipos (Uso Real)" columns={[{ header: 'Tipo', accessor: 'name' }, { header: 'Nº', accessor: 'valor' }]} data={stats.tipoUsoData} />
-                  <DataTable title="Épocas (Uso Real)" columns={[{ header: 'Época', accessor: 'name' }, { header: 'Nº', accessor: 'valor' }]} data={stats.epocaUsoData} />
+                  <DataTable title="Execuções por Tom" columns={[{ header: 'Tom', accessor: 'name' }, { header: 'Nº', accessor: 'valor' }]} data={stats.tomUsoData} />
+                  <DataTable title="Execuções por Tipo" columns={[{ header: 'Tipo', accessor: 'name' }, { header: 'Nº', accessor: 'valor' }]} data={stats.tipoUsoData} />
+                  <DataTable title="Execuções por Período" columns={[{ header: 'Época', accessor: 'name' }, { header: 'Nº', accessor: 'valor' }]} data={stats.epocaUsoData} />
               </div>
 
               {/* Blocos 25 e 26: Evolução Temporal */}
               <div>
-                <h3 className="chart-title">Evolução Temporal e Acúmulo</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <h3 className="chart-title" style={{ margin: 0 }}>Linha do Tempo do Repertório</h3>
+                  <ChartHelp text={HELP.evolucao} />
+                </div>
                 <div className="glass-panel" style={{ height: '400px' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={stats.evolucaoTemporal} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -833,12 +879,15 @@ export default function Dashboard({ data }) {
               </div>
 
               {/* Bloco 27: Heatmap Cantor x Domingo */}
-              <HeatmapTable title="Participação: Cantor × Domingo" data={stats.heatmapCantorDomingo.data} columns={stats.heatmapCantorDomingo.columns} rowKey="cantor" maxValue={stats.heatmapCantorDomingo.max} />
+              <HeatmapTable title="Atividade por Data: Cantor × Domingo" helpText={HELP.heatmap} data={stats.heatmapCantorDomingo.data} columns={stats.heatmapCantorDomingo.columns} rowKey="cantor" maxValue={stats.heatmapCantorDomingo.max} />
 
               {/* A1 — Status das Canções + A2 — Pareto */}
               <div className="dashboard-grid">
                 <div className="glass-panel h-full">
-                  <h3 className="chart-title">Saúde do Repertório (Status)</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <h3 className="chart-title" style={{ margin: 0 }}>Saúde do Repertório</h3>
+                    <ChartHelp text={HELP.status} />
+                  </div>
                   <div style={{ height: '300px' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -850,14 +899,15 @@ export default function Dashboard({ data }) {
                     </ResponsiveContainer>
                   </div>
                 </div>
-                <DataTable title="Status do Repertório" columns={[{ header: 'Status', accessor: 'name' }, { header: 'Canções', accessor: 'valor' }, { header: '%', accessor: 'porcentagem' }]} data={stats.statusChartData} />
+                <DataTable title="Status das Canções" columns={[{ header: 'Status', accessor: 'name' }, { header: 'Canções', accessor: 'valor' }, { header: '%', accessor: 'porcentagem' }]} data={stats.statusChartData} />
               </div>
 
               {/* A2 — Pareto / Concentração */}
               {stats.paretoData.length > 0 && (
                 <div>
                   <div className="flex-between mb-4">
-                    <h3 className="chart-title" style={{ margin: 0 }}>Concentração do Repertório (Pareto)</h3>
+                    <h3 className="chart-title" style={{ margin: 0 }}>Concentração de Execuções (Regra 80/20)</h3>
+                    <ChartHelp text={HELP.pareto} />
                     <span style={{ background: stats.pareto80Count <= Math.ceil(stats.paretoTotalSongs * 0.3) ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)', padding: '0.3rem 0.8rem', borderRadius: '1rem', fontSize: '0.85rem', fontWeight: 600 }}>
                       {stats.pareto80Count} de {stats.paretoTotalSongs} canções = 80% das execuções
                     </span>
@@ -889,6 +939,7 @@ export default function Dashboard({ data }) {
               {/* D3 — Ranking de Eficiência */}
               <DataTable 
                 title="Ranking de Eficiência dos Cantores"
+                helpText={HELP.eficiencia}
                 columns={[
                   { header: 'Cantor', accessor: 'cantor' },
                   { header: 'Canções', accessor: 'cancoes' },
@@ -950,7 +1001,10 @@ export default function Dashboard({ data }) {
 
       {stats.generos && stats.generos.length > 0 && (
         <div id="analise-genero" className="animate-fade-in flex flex-col gap-10 mt-8 pt-8" style={{ scrollMarginTop: '2rem' }}>
-          <h2 className="section-title">3. Análise por Gênero</h2>
+          <h2 className="section-title flex-center gap-2" style={{ justifyContent: 'flex-start' }}>
+            <BarChart3 size={24} /> 4. Análise por Gênero
+          </h2>
+          <p className="section-subtitle">Comparação de repertório e desempenho entre gêneros.</p>
 
           {/* Cards comparativos por gênero */}
           <div className="dashboard-grid" style={{ gridTemplateColumns: `repeat(${Math.min(stats.generoProfiles.length, 3)}, 1fr)` }}>
@@ -1026,7 +1080,10 @@ export default function Dashboard({ data }) {
 
           {/* Tons por Gênero (Stacked Bar) */}
           <div className="glass-panel">
-            <h3 className="chart-title">Tons por Gênero</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 className="chart-title" style={{ margin: 0 }}>Tons por Gênero</h3>
+              <ChartHelp text={HELP.stackedBar} />
+            </div>
             <div style={{ height: '400px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.generoTomChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -1045,7 +1102,10 @@ export default function Dashboard({ data }) {
 
           {/* Tipos por Gênero (Stacked Bar) */}
           <div className="glass-panel">
-            <h3 className="chart-title">Tipos por Gênero</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 className="chart-title" style={{ margin: 0 }}>Tipos por Gênero</h3>
+              <ChartHelp text={HELP.stackedBar} />
+            </div>
             <div style={{ height: '350px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.generoTipoChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -1064,8 +1124,8 @@ export default function Dashboard({ data }) {
 
           {/* Heatmaps: Gênero × Tom e Gênero × Época */}
           <div className="dashboard-grid">
-            <HeatmapTable title="Gênero × Tom" data={stats.heatmapGeneroTom.data} columns={stats.heatmapGeneroTom.columns} rowKey="genero" maxValue={stats.heatmapGeneroTom.max} />
-            <HeatmapTable title="Gênero × Época" data={stats.heatmapGeneroEpoca.data} columns={stats.heatmapGeneroEpoca.columns} rowKey="genero" maxValue={stats.heatmapGeneroEpoca.max} />
+             <HeatmapTable title="Gênero × Tonalidade" helpText={HELP.heatmap} data={stats.heatmapGeneroTom.data} columns={stats.heatmapGeneroTom.columns} rowKey="genero" maxValue={stats.heatmapGeneroTom.max} />
+            <HeatmapTable title="Gênero × Período" helpText={HELP.heatmap} data={stats.heatmapGeneroEpoca.data} columns={stats.heatmapGeneroEpoca.columns} rowKey="genero" maxValue={stats.heatmapGeneroEpoca.max} />
           </div>
 
           {/* Execuções por Gênero (Uso Real) — só aparece se houver datas */}
